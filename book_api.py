@@ -1,27 +1,16 @@
 from flask import Flask, jsonify
-import requests
-from bs4 import BeautifulSoup
+import pandas as pd
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/books', methods=['GET'])
 def get_books():
-    url = 'http://books.toscrape.com/'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    books = []
-    for book in soup.find_all('article', class_='product_pod'):
-        title = book.h3.a['title']
-        price = book.select_one('.price_color').text
-        availability = book.select_one('.availability').text.strip()
-        books.append({
-            'title': title,
-            'price': price,
-            'availability': availability
-        })
-
-    return jsonify(books)
+    try:
+        df = pd.read_csv('books.csv')
+        books = df.to_dict(orient='records')
+        return jsonify(books)
+    except FileNotFoundError:
+        return jsonify({"error": "books.csv not found"}), 404
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080)
